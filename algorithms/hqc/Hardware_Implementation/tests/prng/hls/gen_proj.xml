@@ -1,0 +1,110 @@
+<genprojet>
+
+	<csim>false</csim>
+	<csynth>true</csynth>
+	<cosim>true</cosim>
+	<implem>true</implem>
+	<reportonly>false</reportonly>
+	
+	<!-- <projet name="randombytes">
+		<function name="randombytes">
+		<description name="rng_randombytes">
+		<clockperiod value="6.6">
+		<sourcepath name="../../src/"/>
+		<testbenchpath name="../src/"/>
+		<templatepath name="../../src/templates/"/>
+		<docpath name="../doc/"/>
+		<file name= "kem_typedef.h"/>
+		<file name= "Keccak_Defines.h"/>
+		<file name= "KeccakF1600_StatePermute.h"/>
+		<file name= "KeccakF1600_StatePermute.c"/>
+		<file name= "sponge_rng.h"/>
+		<file name= "sponge_rng.c"/>
+		<testbench name="tb_seedexpander.c"/>
+		<solution name="Reference_Version">
+			<directive name = "directives.tcl"/>
+		</solution>
+		<solution name="Optimized_version">
+			<attribut name="OPTIMIZED_VERSION"/>
+			<directive name = "directives.tcl"/>
+		</solution>
+	</projet> -->
+	
+	<projet name="init_and_expand">
+		<function name="seedexpander_init_and_expand">
+		<description name="seedexpander_init_and_expand">
+		<clockperiod value="6.6">
+		<sourcepath name="../../src/"/>
+		<testbenchpath name="../src/"/>
+		<templatepath name="../../src/templates/"/>
+		<docpath name="../doc/"/>
+		<file name= "kem_typedef.h"/>
+		<file name= "gf.h"/>
+		<file name= "gf.c"/>
+		<file name= "lfsr.h"/>
+		<file name= "lfsr.c"/>
+		<file name= "rng.h"/>
+		<file name= "rng.c"/>
+		<testbench name="tb_seedexpander.c"/>
+		<solution name="Reference_Version">
+			<directive name = "directives.tcl"/>
+		</solution>
+		<solution name="Optimized_version">
+			<attribut name="OPTIMIZED_VERSION"/>
+			<directive name = "directives.tcl"/>
+		</solution>
+	</projet>
+
+	
+	<projet name="randombytes">
+		<function name="randombytes_2">
+		<description name="randombytes_2">
+		<clockperiod value="6.6">
+		<sourcepath name="../../src/"/>
+		<testbenchpath name="../src/"/>
+		<templatepath name="../../src/templates/"/>
+		<docpath name="../doc/"/>
+		<file name= "kem_typedef.h"/>
+		<file name= "gf.h"/>
+		<file name= "gf.c"/>
+		<file name= "lfsr.h"/>
+		<file name= "lfsr.c"/>
+		<file name= "rng.h"/>
+		<file name= "rng.c"/>
+		<testbench name="tb_randombytes.c"/>
+		<solution name="Reference_Version">
+			<directive name = "directives.tcl"/>
+		</solution>
+		<solution name="Optimized_version">
+			<attribut name="OPTIMIZED_VERSION"/>
+			<directive name = "directives.tcl"/>
+		</solution>
+	</projet>
+	
+	<!-- <projet name="rng_seedexp_i_and_e">
+		<function name="seedexpander_init_and_expand">
+		<description name="seedexpander_init_and_expand">
+		<clockperiod value="6.6">
+		<sourcepath name="../../src/"/>
+		<testbenchpath name="../src/"/>
+		<templatepath name="../../src/templates/"/>
+		<docpath name="../doc/"/>
+		<file name= "kem_typedef.h"/>
+		<file name= "Keccak_Defines.h"/>
+		<file name= "KeccakF1600_StatePermute.h"/>
+		<file name= "KeccakF1600_StatePermute.c"/>
+		<file name= "sponge_rng.h"/>
+		<file name= "sponge_rng.c"/>
+		<testbench name="tb_seedexpander.c"/>
+		<solution name="Reference_Version">
+			<directive name = "directives.tcl"/>
+		</solution>
+		<solution name="Optimized_version">
+			<attribut name="OPTIMIZED_VERSION"/>
+			<directive name = "directives.tcl"/> 
+		</solution>
+	</projet> -->
+	
+	
+</genprojet>
+
