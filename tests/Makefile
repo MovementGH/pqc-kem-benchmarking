@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-O3 -flto
 LDFLAGS=-flto
-ALGORITHMS=hqc kyber
+ALGORITHMS=hqc kyber ecdh
 ALGORITHMS_DIR=../algorithms
 
 # Benchmarking
@@ -73,3 +73,22 @@ kyber-%.test: benchmark.o kyber-%.o kyber-%.a
 
 kyber-tests: $(addsuffix .test, $(addprefix kyber-, $(KYBER_VARIANTS)))
 kyber-libs: $(addsuffix .a, $(addprefix kyber-, $(KYBER_VARIANTS)))
+
+# ECDH
+ECDH_VARIANTS=256
+ECDH_DIR=$(ALGORITHMS_DIR)/ecdh
+
+$(ECDH_DIR)/ecdh-%/ecdh.o: $(ECDH_DIR)/ecdh-%/ecdh.c
+	$(CC) $(CFLAGS) -c $(ECDH_DIR)/ecdh-$*/ecdh.c -o $(ECDH_DIR)/ecdh-$*/ecdh.o
+
+ecdh-%.a: $(ECDH_DIR)/ecdh-%/ecdh.o
+	ar rcs $@ $(ECDH_DIR)/ecdh-$*/*.o
+
+ecdh-%.o: main.c
+	$(CC) -c $(CFLAGS) -o $@ main.c -I$(ECDH_DIR)/ecdh-$*
+
+ecdh-%.test: benchmark.o ecdh-%.o ecdh-%.a
+	$(CC) -o $@ $(LDFLAGS) benchmark.o ecdh-$*.o ecdh-$*.a -lcrypto
+
+ecdh-tests: $(addsuffix .test, $(addprefix ecdh-, $(ECDH_VARIANTS)))
+ecdh-libs: $(addsuffix .a, $(addprefix ecdh-, $(ECDH_VARIANTS)))
