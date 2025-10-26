@@ -9,7 +9,7 @@ tests: $(addsuffix -tests, $(ALGORITHMS))
 libs: $(addsuffix -libs, $(ALGORITHMS))
 
 test:
-	echo "Test, Public Key Size, Private Key Size, Signature Size, Signs/s, Verifies/s" > results.csv
+	echo "Test, Public Key Size, Private Key Size, Cipher Size, Encapsulations/s, Decapsulations/s" > results.csv
 	for file in *.test; do echo "========== $${file%.test} =========="; ./$$file; echo ""; done > results.txt 2>> results.csv
 
 benchmark.o: benchmark.c
