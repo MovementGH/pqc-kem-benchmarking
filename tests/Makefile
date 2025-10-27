@@ -75,17 +75,17 @@ kyber-tests: $(addsuffix .test, $(addprefix kyber-, $(KYBER_VARIANTS)))
 kyber-libs: $(addsuffix .a, $(addprefix kyber-, $(KYBER_VARIANTS)))
 
 # ECDH
-ECDH_VARIANTS=256
+ECDH_VARIANTS=256 384 521
 ECDH_DIR=$(ALGORITHMS_DIR)/ecdh
 
-$(ECDH_DIR)/ecdh-%/ecdh.o: $(ECDH_DIR)/ecdh-%/ecdh.c
-	$(CC) $(CFLAGS) -c $(ECDH_DIR)/ecdh-$*/ecdh.c -o $(ECDH_DIR)/ecdh-$*/ecdh.o
+$(ECDH_DIR)/ecdh-%.o: $(ECDH_DIR)/ecdh.c
+	$(CC) $(CFLAGS) -c $(ECDH_DIR)/ecdh.c -o $(ECDH_DIR)/ecdh-$*.o -DECDH_SECURITY_LEVEL=$*
 
-ecdh-%.a: $(ECDH_DIR)/ecdh-%/ecdh.o
-	ar rcs $@ $(ECDH_DIR)/ecdh-$*/*.o
+ecdh-%.a: $(ECDH_DIR)/ecdh-%.o
+	ar rcs $@ $(ECDH_DIR)/ecdh-$*.o
 
 ecdh-%.o: main.c
-	$(CC) -c $(CFLAGS) -o $@ main.c -I$(ECDH_DIR)/ecdh-$*
+	$(CC) -c $(CFLAGS) -o $@ main.c -I$(ECDH_DIR) -DECDH_SECURITY_LEVEL=$*
 
 ecdh-%.test: benchmark.o ecdh-%.o ecdh-%.a
 	$(CC) -o $@ $(LDFLAGS) benchmark.o ecdh-$*.o ecdh-$*.a -lcrypto

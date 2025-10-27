@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <api.h>
 #include "benchmark.h"
@@ -40,6 +41,14 @@ void dec() {
 int main(int argc, char** argv) {
     // Initialize cryptographic keys
     setup();
+
+    char ss_chk[CRYPTO_BYTES];
+    crypto_kem_enc (ct, ss, pk);
+    crypto_kem_dec (ss_chk, ct, sk);
+    if(strcmp(ss_chk, ss) != 0) {
+      printf ("Error in scheme, secrets don't match!");
+      return -1;
+    }
 
     // Print out the details of the KEM
     printf("Algorithm: %s\n", CRYPTO_ALGNAME);
