@@ -6,7 +6,7 @@
 #include "benchmark.h"
 
 #define MLEN 86
-#define BENCHMARK_LENGTH 500000
+#define BENCHMARK_LENGTH 5000000
 #define MIN_RUNS 5
 
 unsigned char *sk, *pk, *ct, *ss;
