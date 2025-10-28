@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-O3 -flto
 LDFLAGS=-flto
-ALGORITHMS=hqc kyber ecdh
+ALGORITHMS=hqc kyber kyber-avx ecdh
 ALGORITHMS_DIR=../algorithms
 
 # Benchmarking
@@ -42,22 +42,50 @@ hqc-%.test: benchmark.o hqc-%.o hqc-%.a
 hqc-tests: $(addsuffix .test, $(addprefix hqc-, $(HQC_VARIANTS)))
 hqc-libs: $(addsuffix .a, $(addprefix hqc-, $(HQC_VARIANTS)))
 
+# Kyber AVX
+KYBER_AVX_VARIANTS=512 768 1024
+KYBER_AVX_DIR=$(ALGORITHMS_DIR)/kyber/Additional_Implementations/avx2/crypto_kem
+KYBER_AVX_CFLAGS=-mavx2 -mbmi2 -mpopcnt -maes -march=native -mtune=native -O3 -fomit-frame-pointer
+KYBER_AVX_LDFLAGS=-lcrypto
+KYBER_AVX_C=cbd.c consts.c indcpa.c kem.c poly.c polyvec.c rejsample.c rng.c verify.c fips202.c fips202x4.c keccak4x/KeccakP-1600-times4-SIMD256.c symmetric-shake.c
+KYBER_AVX_ASM=fq.S invntt.S ntt.S shuffle.S basemul.S
+KYBER_AVX_SRC=$(KYBER_AVX_C) $(KYBER_AVX_ASM)
+KYBER_AVX_OBJ=$(subst .c,.o,$(KYBER_AVX_C)) $(subst .S,.o,$(KYBER_AVX_ASM))
+
+define KYBER_AVX_template
+$(KYBER_AVX_DIR)/kyber$(1)/%.o: $(KYBER_AVX_DIR)/kyber$(1)/%.c
+	$$(CC) $$(CFLAGS) $$(KYBER_AVX_CFLAGS) -c -o $$@ $$<
+
+$(KYBER_AVX_DIR)/kyber$(1)/%.o: $(KYBER_AVX_DIR)/kyber$(1)/%.S
+	$$(CC) $$(CFLAGS) $$(KYBER_AVX_CFLAGS) -I$(KYBER_AVX_DIR)/kyber$(1) -c -o $$@ $$<
+endef
+
+$(foreach v,$(KYBER_AVX_VARIANTS),$(eval $(call KYBER_AVX_template,$(v))))
+
+kyber-avx-%.a: $(addprefix $(KYBER_AVX_DIR)/kyber%/,$(KYBER_AVX_OBJ))
+	ar rcs $@ $^
+
+kyber-avx-%.o: main.c
+	$(CC) -c $(CFLAGS) -o $@ main.c -I$(KYBER_AVX_DIR)/kyber$*
+
+kyber-avx-%.test: benchmark.o kyber-avx-%.o kyber-avx-%.a
+	$(CC) -o $@ $(LDFLAGS) $(KYBER_AVX_LDFLAGS) benchmark.o kyber-avx-$*.o kyber-avx-$*.a
+
+kyber-avx-tests: $(addsuffix .test, $(addprefix kyber-avx-, $(KYBER_AVX_VARIANTS)))
+kyber-avx-libs: $(addsuffix .a, $(addprefix kyber-avx-, $(KYBER_AVX_VARIANTS)))
+
 # Kyber
 KYBER_VARIANTS=512 768 1024
-KYBER_DIR=$(ALGORITHMS_DIR)/kyber/Additional_Implementations/avx2/crypto_kem
-KYBER_CFLAGS=-mavx2 -mbmi2 -mpopcnt -maes -march=native -mtune=native -O3 -fomit-frame-pointer
+KYBER_DIR=$(ALGORITHMS_DIR)/kyber/Optimized_Implementation/crypto_kem
+KYBER_CFLAGS=-O3 -march=native -fomit-frame-pointer
 KYBER_LDFLAGS=-lcrypto
-KYBER_C=cbd.c consts.c indcpa.c kem.c poly.c polyvec.c rejsample.c rng.c verify.c fips202.c fips202x4.c keccak4x/KeccakP-1600-times4-SIMD256.c symmetric-shake.c
-KYBER_ASM=fq.S invntt.S ntt.S shuffle.S basemul.S
+KYBER_C=cbd.c fips202.c indcpa.c kem.c ntt.c poly.c polyvec.c PQCgenKAT_kem.c reduce.c rng.c verify.c symmetric-shake.c
 KYBER_SRC=$(KYBER_C) $(KYBER_ASM)
 KYBER_OBJ=$(subst .c,.o,$(KYBER_C)) $(subst .S,.o,$(KYBER_ASM))
 
 define KYBER_template
 $(KYBER_DIR)/kyber$(1)/%.o: $(KYBER_DIR)/kyber$(1)/%.c
 	$$(CC) $$(CFLAGS) $$(KYBER_CFLAGS) -c -o $$@ $$<
-
-$(KYBER_DIR)/kyber$(1)/%.o: $(KYBER_DIR)/kyber$(1)/%.S
-	$$(CC) $$(CFLAGS) $$(KYBER_CFLAGS) -I$(KYBER_DIR)/kyber$(1) -c -o $$@ $$<
 endef
 
 $(foreach v,$(KYBER_VARIANTS),$(eval $(call KYBER_template,$(v))))
