@@ -1,6 +1,14 @@
-#include <sys/time.h>
 #include <unistd.h>
+#include <time.h> // Comment this out if clock_gettime isn't working
+#include <sys/time.h>
 #include "benchmark.h"
+
+// Global buffers - define them here
+unsigned char *sk = NULL;
+unsigned char *pk = NULL;
+unsigned char *ct = NULL;
+unsigned char *ss = NULL;
+double *timings = NULL;
 
 /**
  * This function measures the elapsed time for running a given function
@@ -63,4 +71,44 @@ float benchmark(function_t function, int duration, int minRuns) {
     runTime = getTime(function, runs);
 
     return (float)runTime / (float)runs;
+}
+
+/**
+ * @brief Benchmarks a KEM operation with warmup and measurement, storing results in data array.
+ *        I have optional comments if clock_gettime isn't working
+ * 
+ * This function performs:
+ * 1. Optional warmup iterations
+ * 2. High-precision timing measurements using CLOCK_MONOTONIC for MEASUREMENT_ITERATIONS
+ * 3. Stores raw timing data in the provided data array
+ * 
+ * @param operation Function pointer to the operation to benchmark (keygen, enc, dec).
+ * @param data Array to store timing measurements (must be at least MEASUREMENT_ITERATIONS size).
+ * @param do_warmup Whether to perform warmup iterations (1 = yes, 0 = no).
+ */
+void benchmark_operation(function_t operation, double *data, int do_warmup) {
+    struct timespec start, end;
+    //struct timeval start, end;
+
+    // Warmup phase
+    if (do_warmup) {
+        for (int i = 0; i < WARMUP_ITERATIONS; i++)
+            operation();
+    }
+    
+    // Measurement phase
+    for (int i = 0; i < MEASUREMENT_ITERATIONS; i++) {
+
+        clock_gettime(CLOCK_MONOTONIC, &start);
+        //gettimeofday(&start, NULL);
+
+        operation();
+
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        //gettimeofday(&end, NULL);
+        
+        data[i] = (end.tv_sec - start.tv_sec) * 1000000.0 +
+                  (end.tv_nsec - start.tv_nsec) / 1000.0;
+        //data[i] = (end.tv_sec - start.tv_sec) * 1000 * 1000 + (end.tv_usec - start.tv_usec);
+    }
 }

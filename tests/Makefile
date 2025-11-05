@@ -1,23 +1,31 @@
 CC=gcc
-CFLAGS=-O3 -flto
-LDFLAGS=-flto
+AR=gcc-ar
+CFLAGS=-O3 -march=native -flto -fomit-frame-pointer
+LDFLAGS=-flto -lm
 ALGORITHMS=hqc kyber kyber-avx ecdh
 ALGORITHMS_DIR=../algorithms
+
+# Common object files
+COMMON_OBJS=benchmark.o stats.o
 
 # Benchmarking
 tests: $(addsuffix -tests, $(ALGORITHMS))
 libs: $(addsuffix -libs, $(ALGORITHMS))
 
 test:
-	echo "Test, Public Key Size, Private Key Size, Cipher Size, Encapsulations/s, Decapsulations/s" > results.csv
-	for file in *.test; do echo "========== $${file%.test} =========="; ./$$file; echo ""; done > results.txt 2>> results.csv
+	echo "Algorithm,PublicKeySize,SecretKeySize,CiphertextSize,KeyGenMedian_us,EncapsMedian_us,DecapsMedian_us,TotalHandshake_us" > results.csv
+	for file in *.test; do echo "========== $${file%.test} =========="; ./$$file 2>> results.csv; echo ""; done > results.txt
 
-benchmark.o: benchmark.c
+benchmark.o: benchmark.c benchmark.h
 	$(CC) $(CFLAGS) -c -o benchmark.o benchmark.c
+
+stats.o: stats.c benchmark.h
+	$(CC) $(CFLAGS) -c -o stats.o stats.c
 
 clean:
 	rm -f *.o *.test *.a
 	rm -f results.*
+	rm -f $(ALGORITHMS_DIR)/ecdh/*.o
 
 .PHONY: tests libs test clean $(addsuffix -tests, $(ALGORITHMS)) $(addsuffix -libs, $(ALGORITHMS))
 
@@ -28,16 +36,17 @@ HQC_DIR=$(ALGORITHMS_DIR)/hqc/Optimized_Implementation
 .PRECIOUS: $(HQC_DIR)/hqc-%/bin
 
 $(HQC_DIR)/hqc-%/bin:
+	$(MAKE) -C $(HQC_DIR)/hqc-$* clean
 	$(MAKE) -C $(HQC_DIR)/hqc-$* hqc-$*
 
 hqc-%.a: $(HQC_DIR)/hqc-%/bin
-	ar rcs $@ $(HQC_DIR)/hqc-$*/bin/build/*
+	$(AR) rcs $@ $(HQC_DIR)/hqc-$*/bin/build/*.o
 
-hqc-%.o: main.c
+hqc-main-%.o: main.c benchmark.h
 	$(CC) -c $(CFLAGS) -o $@ main.c -I$(HQC_DIR)/hqc-$*/src
 
-hqc-%.test: benchmark.o hqc-%.o hqc-%.a
-	$(CC) -o $@ $(LDFLAGS) benchmark.o hqc-$*.o hqc-$*.a
+hqc-%.test: $(COMMON_OBJS) hqc-main-%.o hqc-%.a
+	$(CC) -o $@ $(COMMON_OBJS) hqc-main-$*.o hqc-$*.a $(LDFLAGS)
 
 hqc-tests: $(addsuffix .test, $(addprefix hqc-, $(HQC_VARIANTS)))
 hqc-libs: $(addsuffix .a, $(addprefix hqc-, $(HQC_VARIANTS)))
@@ -45,8 +54,8 @@ hqc-libs: $(addsuffix .a, $(addprefix hqc-, $(HQC_VARIANTS)))
 # Kyber AVX
 KYBER_AVX_VARIANTS=512 768 1024
 KYBER_AVX_DIR=$(ALGORITHMS_DIR)/kyber/Additional_Implementations/avx2/crypto_kem
-KYBER_AVX_CFLAGS=-mavx2 -mbmi2 -mpopcnt -maes -march=native -mtune=native -O3 -fomit-frame-pointer
-KYBER_AVX_LDFLAGS=-lcrypto
+KYBER_AVX_CFLAGS=-mavx2 -mbmi2 -mpopcnt -maes -march=native -mtune=native -O3 -flto -fomit-frame-pointer
+KYBER_AVX_LDFLAGS=-flto -lcrypto
 KYBER_AVX_C=cbd.c consts.c indcpa.c kem.c poly.c polyvec.c rejsample.c rng.c verify.c fips202.c fips202x4.c keccak4x/KeccakP-1600-times4-SIMD256.c symmetric-shake.c
 KYBER_AVX_ASM=fq.S invntt.S ntt.S shuffle.S basemul.S
 KYBER_AVX_SRC=$(KYBER_AVX_C) $(KYBER_AVX_ASM)
@@ -63,13 +72,13 @@ endef
 $(foreach v,$(KYBER_AVX_VARIANTS),$(eval $(call KYBER_AVX_template,$(v))))
 
 kyber-avx-%.a: $(addprefix $(KYBER_AVX_DIR)/kyber%/,$(KYBER_AVX_OBJ))
-	ar rcs $@ $^
+	$(AR) rcs $@ $^
 
-kyber-avx-%.o: main.c
+kyber-avx-main-%.o: main.c benchmark.h
 	$(CC) -c $(CFLAGS) -o $@ main.c -I$(KYBER_AVX_DIR)/kyber$*
 
-kyber-avx-%.test: benchmark.o kyber-avx-%.o kyber-avx-%.a
-	$(CC) -o $@ $(LDFLAGS) $(KYBER_AVX_LDFLAGS) benchmark.o kyber-avx-$*.o kyber-avx-$*.a
+kyber-avx-%.test: $(COMMON_OBJS) kyber-avx-main-%.o kyber-avx-%.a
+	$(CC) -o $@ $(COMMON_OBJS) kyber-avx-main-$*.o kyber-avx-$*.a $(LDFLAGS) $(KYBER_AVX_LDFLAGS)
 
 kyber-avx-tests: $(addsuffix .test, $(addprefix kyber-avx-, $(KYBER_AVX_VARIANTS)))
 kyber-avx-libs: $(addsuffix .a, $(addprefix kyber-avx-, $(KYBER_AVX_VARIANTS)))
@@ -77,8 +86,8 @@ kyber-avx-libs: $(addsuffix .a, $(addprefix kyber-avx-, $(KYBER_AVX_VARIANTS)))
 # Kyber
 KYBER_VARIANTS=512 768 1024
 KYBER_DIR=$(ALGORITHMS_DIR)/kyber/Optimized_Implementation/crypto_kem
-KYBER_CFLAGS=-O3 -march=native -fomit-frame-pointer
-KYBER_LDFLAGS=-lcrypto
+KYBER_CFLAGS=-O3 -march=native -flto -fomit-frame-pointer
+KYBER_LDFLAGS=-flto -lcrypto
 KYBER_C=cbd.c fips202.c indcpa.c kem.c ntt.c poly.c polyvec.c PQCgenKAT_kem.c reduce.c rng.c verify.c symmetric-shake.c
 KYBER_SRC=$(KYBER_C) $(KYBER_ASM)
 KYBER_OBJ=$(subst .c,.o,$(KYBER_C)) $(subst .S,.o,$(KYBER_ASM))
@@ -91,13 +100,13 @@ endef
 $(foreach v,$(KYBER_VARIANTS),$(eval $(call KYBER_template,$(v))))
 
 kyber-%.a: $(addprefix $(KYBER_DIR)/kyber%/,$(KYBER_OBJ))
-	ar rcs $@ $^
+	$(AR) rcs $@ $^
 
-kyber-%.o: main.c
+kyber-main-%.o: main.c benchmark.h
 	$(CC) -c $(CFLAGS) -o $@ main.c -I$(KYBER_DIR)/kyber$*
 
-kyber-%.test: benchmark.o kyber-%.o kyber-%.a
-	$(CC) -o $@ $(LDFLAGS) $(KYBER_LDFLAGS) benchmark.o kyber-$*.o kyber-$*.a
+kyber-%.test: $(COMMON_OBJS) kyber-main-%.o kyber-%.a
+	$(CC) -o $@ $(COMMON_OBJS) kyber-main-$*.o kyber-$*.a $(LDFLAGS) $(KYBER_LDFLAGS)
 
 kyber-tests: $(addsuffix .test, $(addprefix kyber-, $(KYBER_VARIANTS)))
 kyber-libs: $(addsuffix .a, $(addprefix kyber-, $(KYBER_VARIANTS)))
@@ -110,13 +119,13 @@ $(ECDH_DIR)/ecdh-%.o: $(ECDH_DIR)/ecdh.c
 	$(CC) $(CFLAGS) -c $(ECDH_DIR)/ecdh.c -o $(ECDH_DIR)/ecdh-$*.o -DECDH_SECURITY_LEVEL=$*
 
 ecdh-%.a: $(ECDH_DIR)/ecdh-%.o
-	ar rcs $@ $(ECDH_DIR)/ecdh-$*.o
+	$(AR) rcs $@ $(ECDH_DIR)/ecdh-$*.o
 
-ecdh-%.o: main.c
+ecdh-main-%.o: main.c benchmark.h
 	$(CC) -c $(CFLAGS) -o $@ main.c -I$(ECDH_DIR) -DECDH_SECURITY_LEVEL=$*
 
-ecdh-%.test: benchmark.o ecdh-%.o ecdh-%.a
-	$(CC) -o $@ $(LDFLAGS) benchmark.o ecdh-$*.o ecdh-$*.a -lcrypto
+ecdh-%.test: $(COMMON_OBJS) ecdh-main-%.o ecdh-%.a
+	$(CC) -o $@ $(COMMON_OBJS) ecdh-main-$*.o ecdh-$*.a $(LDFLAGS) -lcrypto
 
 ecdh-tests: $(addsuffix .test, $(addprefix ecdh-, $(ECDH_VARIANTS)))
 ecdh-libs: $(addsuffix .a, $(addprefix ecdh-, $(ECDH_VARIANTS)))
