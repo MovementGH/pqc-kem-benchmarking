@@ -6,26 +6,26 @@ ALGORITHMS=hqc kyber kyber-avx ecdh
 ALGORITHMS_DIR=../algorithms
 
 # Common object files
-COMMON_OBJS=benchmark.o stats.o
+COMMON_OBJS=benchmark.o
 
 # Benchmarking
 tests: $(addsuffix -tests, $(ALGORITHMS))
 libs: $(addsuffix -libs, $(ALGORITHMS))
 
 test:
-	echo "Algorithm,PublicKeySize,SecretKeySize,CiphertextSize,KeyGenMedian_us,EncapsMedian_us,DecapsMedian_us,TotalHandshake_us" > results.csv
-	for file in *.test; do echo "========== $${file%.test} =========="; ./$$file 2>> results.csv; echo ""; done > results.txt
+	mkdir -p output
+	echo 'Algorithm,"Public Key Size","Secret Key Size","Ciphertext Size","Encapsulation (ns)","Decapsulation (ns)","Handshake (ns)"' > output/results.csv
+	for file in *.test; do \
+		./$$file > output/$${file%.test}.txt 2>> output/results.csv; \
+	done
 
 benchmark.o: benchmark.c benchmark.h
 	$(CC) $(CFLAGS) -c -o benchmark.o benchmark.c
 
-stats.o: stats.c benchmark.h
-	$(CC) $(CFLAGS) -c -o stats.o stats.c
-
 clean:
 	rm -f *.o *.test *.a
-	rm -f results.*
 	rm -f $(ALGORITHMS_DIR)/ecdh/*.o
+	rm -rf output
 
 .PHONY: tests libs test clean $(addsuffix -tests, $(ALGORITHMS)) $(addsuffix -libs, $(ALGORITHMS))
 
