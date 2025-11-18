@@ -147,7 +147,7 @@ int main(int argc, char** argv) {
         CRYPTO_PUBLICKEYBYTES,
         CRYPTO_SECRETKEYBYTES,
         CRYPTO_CIPHERTEXTBYTES,
-        keygen_median,
+        encaps_median,
         decaps_median,
         encaps_median + decaps_median
     );
