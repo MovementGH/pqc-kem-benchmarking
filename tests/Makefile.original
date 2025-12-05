@@ -1,9 +1,7 @@
 CC=gcc
 AR=ar
-# OpenSSL paths for M1 Mac
-OPENSSL_PREFIX=/opt/homebrew/opt/openssl@3
-CFLAGS=-O3 -flto -fomit-frame-pointer -I$(OPENSSL_PREFIX)/include
-LDFLAGS=-flto -lm -L$(OPENSSL_PREFIX)/lib
+CFLAGS=-O3 -flto -fomit-frame-pointer
+LDFLAGS=-flto -lm
 ALGORITHMS=hqc kyber ecdh
 ALGORITHMS_DIR=../algorithms
 
@@ -56,7 +54,7 @@ hqc-libs: $(addsuffix .a, $(addprefix hqc-, $(HQC_VARIANTS)))
 # Kyber AVX
 KYBER_AVX_VARIANTS=512 768 1024
 KYBER_AVX_DIR=$(ALGORITHMS_DIR)/kyber/Additional_Implementations/avx2/crypto_kem
-KYBER_AVX_CFLAGS=-mavx2 -mbmi2 -mpopcnt -maes  -mtune=native -O3 -flto -fomit-frame-pointer
+KYBER_AVX_CFLAGS=-mavx2 -mbmi2 -mpopcnt -maes -march=native -mtune=native -O3 -flto -fomit-frame-pointer
 KYBER_AVX_LDFLAGS=-flto -lcrypto
 KYBER_AVX_C=cbd.c consts.c indcpa.c kem.c poly.c polyvec.c rejsample.c rng.c verify.c fips202.c fips202x4.c keccak4x/KeccakP-1600-times4-SIMD256.c symmetric-shake.c
 KYBER_AVX_ASM=fq.S invntt.S ntt.S shuffle.S basemul.S
@@ -88,8 +86,8 @@ kyber-avx-libs: $(addsuffix .a, $(addprefix kyber-avx-, $(KYBER_AVX_VARIANTS)))
 # Kyber
 KYBER_VARIANTS=512 768 1024
 KYBER_DIR=$(ALGORITHMS_DIR)/kyber/Optimized_Implementation/crypto_kem
-KYBER_CFLAGS=-O3 -flto -fomit-frame-pointer -I$(OPENSSL_PREFIX)/include
-KYBER_LDFLAGS=-flto -L$(OPENSSL_PREFIX)/lib -lcrypto
+KYBER_CFLAGS=-O3 -flto -fomit-frame-pointer
+KYBER_LDFLAGS=-flto -lcrypto
 KYBER_C=cbd.c fips202.c indcpa.c kem.c ntt.c poly.c polyvec.c PQCgenKAT_kem.c reduce.c rng.c verify.c symmetric-shake.c
 KYBER_SRC=$(KYBER_C) $(KYBER_ASM)
 KYBER_OBJ=$(subst .c,.o,$(KYBER_C)) $(subst .S,.o,$(KYBER_ASM))
