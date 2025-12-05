@@ -1,9 +1,17 @@
 CC=gcc
-AR=gcc-ar
 CFLAGS=-O3 -march=native -flto -fomit-frame-pointer
 LDFLAGS=-flto -lm
-ALGORITHMS=hqc kyber kyber-avx ecdh
+ALGORITHMS=kyber ecdh
 ALGORITHMS_DIR=../algorithms
+
+ifneq ($(shell uname -p),arm)
+ALGORITHMS := $(ALGORITHMS) kyber-avx hqc
+else
+# OpenSSL paths for M1 Mac
+OPENSSL_PREFIX=/opt/homebrew/opt/openssl@3
+CFLAGS := $(CFLAGS) -I$(OPENSSL_PREFIX)/include
+LDFLAGS := $(LDFLAGS) -L$(OPENSSL_PREFIX)/lib
+endif
 
 # Common object files
 COMMON_OBJS=benchmark.o
@@ -14,7 +22,7 @@ libs: $(addsuffix -libs, $(ALGORITHMS))
 
 test:
 	mkdir -p output
-	echo 'Algorithm,"Public Key Size","Secret Key Size","Ciphertext Size","Encapsulation (ns)","Decapsulation (ns)","Handshake (ns)"' > output/results.csv
+	echo 'Algorithm,"Public Key Size","Secret Key Size","Ciphertext Size","Encapsulation (ns)","Decapsulation (ns)","Handshake (ns)","Kilohandshakes/S' > output/results.csv
 	for file in *.test; do \
 		./$$file > output/$${file%.test}.txt 2>> output/results.csv; \
 	done
@@ -22,7 +30,7 @@ test:
 benchmark.o: benchmark.c benchmark.h
 	$(CC) $(CFLAGS) -c -o benchmark.o benchmark.c
 
-clean:
+clean: $(addsuffix -clean, $(ALGORITHMS))
 	rm -f *.o *.test *.a
 	rm -f $(ALGORITHMS_DIR)/ecdh/*.o
 	rm -rf output
@@ -50,6 +58,9 @@ hqc-%.test: $(COMMON_OBJS) hqc-main-%.o hqc-%.a
 
 hqc-tests: $(addsuffix .test, $(addprefix hqc-, $(HQC_VARIANTS)))
 hqc-libs: $(addsuffix .a, $(addprefix hqc-, $(HQC_VARIANTS)))
+
+hqc-clean:
+	rm -rf $(HQC_DIR)/hqc-*/bin
 
 # Kyber AVX
 KYBER_AVX_VARIANTS=512 768 1024
@@ -83,6 +94,9 @@ kyber-avx-%.test: $(COMMON_OBJS) kyber-avx-main-%.o kyber-avx-%.a
 kyber-avx-tests: $(addsuffix .test, $(addprefix kyber-avx-, $(KYBER_AVX_VARIANTS)))
 kyber-avx-libs: $(addsuffix .a, $(addprefix kyber-avx-, $(KYBER_AVX_VARIANTS)))
 
+kyber-avx-clean:
+	find $(KYBER_AVX_DIR) -name '*.o' -delete
+
 # Kyber
 KYBER_VARIANTS=512 768 1024
 KYBER_DIR=$(ALGORITHMS_DIR)/kyber/Optimized_Implementation/crypto_kem
@@ -111,6 +125,9 @@ kyber-%.test: $(COMMON_OBJS) kyber-main-%.o kyber-%.a
 kyber-tests: $(addsuffix .test, $(addprefix kyber-, $(KYBER_VARIANTS)))
 kyber-libs: $(addsuffix .a, $(addprefix kyber-, $(KYBER_VARIANTS)))
 
+kyber-clean:
+	find $(KYBER_DIR) -name '*.o' -delete
+
 # ECDH
 ECDH_VARIANTS=256 384 521
 ECDH_DIR=$(ALGORITHMS_DIR)/ecdh
@@ -129,3 +146,6 @@ ecdh-%.test: $(COMMON_OBJS) ecdh-main-%.o ecdh-%.a
 
 ecdh-tests: $(addsuffix .test, $(addprefix ecdh-, $(ECDH_VARIANTS)))
 ecdh-libs: $(addsuffix .a, $(addprefix ecdh-, $(ECDH_VARIANTS)))
+
+ecdh-clean:
+	rm -f $(ECDH_DIR)/*.o

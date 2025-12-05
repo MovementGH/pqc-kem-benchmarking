@@ -142,14 +142,15 @@ int main(int argc, char** argv) {
     printf("=====================================\n");
 
     // CSV output to stderr for collection
-    fprintf(stderr, "%s,%7d,%7d,%7d,%7d,%7d,%7d\n",
+    fprintf(stderr, "%s,%7d,%7d,%7d,%7d,%7d,%7d,%.2f\n",
         CRYPTO_ALGNAME,
         CRYPTO_PUBLICKEYBYTES,
         CRYPTO_SECRETKEYBYTES,
         CRYPTO_CIPHERTEXTBYTES,
         encaps_median,
         decaps_median,
-        encaps_median + decaps_median
+        encaps_median + decaps_median,
+        1000000.f / (float)(encaps_median + decaps_median)
     );
 
     return 0;
