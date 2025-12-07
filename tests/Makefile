@@ -22,7 +22,7 @@ libs: $(addsuffix -libs, $(ALGORITHMS))
 
 test:
 	mkdir -p output
-	echo 'Algorithm,"Public Key Size","Secret Key Size","Ciphertext Size","Encapsulation (ns)","Decapsulation (ns)","Handshake (ns)","Kilohandshakes/S' > output/results.csv
+	echo 'Algorithm,"Public Key Size","Secret Key Size","Ciphertext Size","Encapsulation (ns)","Decapsulation (ns)","Handshake (ns)","Kilohandshakes/S"' > output/results.csv
 	for file in *.test; do \
 		./$$file > output/$${file%.test}.txt 2>> output/results.csv; \
 	done
