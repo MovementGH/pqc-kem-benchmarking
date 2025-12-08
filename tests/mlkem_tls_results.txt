@@ -1,0 +1,35 @@
+=== ML-KEM-768 (Kyber) TLS 1.3 Benchmark ===
+Date: Mon Dec  8 12:33:07 EST 2025
+
+Run 1: 0.0588s
+Run 2: 0.0567s
+Run 3: 0.0537s
+Run 4: 0.0532s
+Run 5: 0.0925s
+Run 6: 0.0700s
+Run 7: 0.0568s
+Run 8: 0.0527s
+Run 9: 0.0534s
+Run 10: 0.0589s
+Run 11: 0.0539s
+Run 12: 0.0582s
+Run 13: 0.0532s
+Run 14: 0.0539s
+Run 15: 0.0536s
+Run 16: 0.0552s
+Run 17: 0.0539s
+Run 18: 0.0579s
+Run 19: 0.0561s
+Run 20: 0.0552s
+Run 21: 0.0531s
+Run 22: 0.0527s
+Run 23: 0.0542s
+Run 24: 0.0562s
+Run 25: 0.0539s
+Run 26: 0.0531s
+Run 27: 0.0540s
+Run 28: 0.0537s
+Run 29: 0.0549s
+Run 30: 0.0557s
+
+=== Complete ===
